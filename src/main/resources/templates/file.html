@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>linuxWeb连接版</title>
+    <link href="webjars/bootstrap/4.1.2/css/bootstrap.css" rel="stylesheet" />
+    <script src="webjars/jquery/3.0.0/jquery.js" type="text/javascript"></script>
+    <script src="webjars/bootstrap/4.1.2/js/bootstrap.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+</head>
+<body>
+<div class="container" id="connectToLinux">
+    <div class="row">
+        <div class="col-md-4" >
+            远程ip:<input v-model="ip"/><br/>
+            端口(默认22):<input v-model="port"/><br/>
+            用户:<input v-model="name"/><br/>
+            密码:<input v-model="pwd"/><br/>
+            <button v-on:click="connect('',0)">提交</button>
+        </div>
+        <div class="col-md-4">
+            <div style="width: 800px;height: 800px;overflow-y:scroll;border: 1px black solid" >
+                <table class="table table-hover" v-if="isText==0">
+                    {{path1}}<button v-on:click="preStep">上一步</button>
+                    <tbody>
+                    <tr v-for="(value,key) in filelist" v-if="key!='msg'">
+                        <td v-if="value==0" v-on:click="connect(key,value)"><img src="img/file.jpg" style="width: 25px;height: 25px">{{key}}</td>
+                    </tr>
+                    <tr v-for="(value,key) in filelist" v-if="key!='msg'">
+                        <td v-if="value==1" v-on:click="connect(key,value)"><img src="img/noDirectory.jpg" style="width: 25px;height:25px;">{{key}}</td>
+                    </tr>
+                    </tbody>
+                    <div v-if="isText==1">
+                        <div  v-for="(value,key) in content" v-if="key!='msg'">{{key}}</div>
+                    </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+<script type="text/javascript">
+     var app=new Vue({
+        el:'#connectToLinux',
+         data:{
+            ip:"",
+             name:"",
+            pwd:"",
+             port:"",
+             filelist:[],
+             path1:"",
+             content:[],
+             isText:0 //0表示遍历目录，1表示打开内容
+         },
+        methods:{
+            connect:function (path,value) {
+               var prepath=this.path1
+                if(path!=null&&path!=""){
+                    this.path1=this.path1+'/'+path
+                }
+                if(value==0){
+                    if(this.path1==""){
+                        this.$http.post('/findFile/byPath',{ip:this.ip,name:this.name,pwd:this.pwd,port:this.port}).then(function (res) {
+                            this.isText=0
+                            if(res.body.msg==200){
+                                this.filelist=res.body
+                            }else {
+                                alert("连接失败请检查ip地址用户名密码是否正确");
+                                this.path1=prepath
+                            }
+                        })
+                    }else {
+                        this.$http.post('/findFile/byPath?path='+this.path1,{ip:this.ip,name:this.name,pwd:this.pwd,port:this.port}).then(function (res) {
+                            this.isText=0
+                            if(res.body.msg==200){
+                                this.filelist=res.body
+                            }else {
+                                alert("连接失败请检查ip地址用户名密码是否正确");
+                                this.path1=prepath
+                            }
+                        })
+                    }
+                }else{
+                    //打开文件
+                    this.$http.post('/findFile/openFile?path='+this.path1,{ip:this.ip,name:this.name,pwd:this.pwd,port:this.port}).then(function (res) {
+                        //console.log(res.body)
+                        if(res.body.msg==200){
+                            this.isText=1
+                            this.content=res.body
+                            console.log(res.body)
+                        }else {
+                            this.isText=0
+                            alert("连接失败请检查ip地址用户名密码是否正确");
+                            this.path1=prepath
+                        }
+                    })
+                }
+
+            },
+            preStep:function () {
+                this.path1=this.path1.substring(0,this.path1.lastIndexOf('/'))
+                this.$http.post('/findFile/byPath?path='+this.path1,{ip:this.ip,name:this.name,pwd:this.pwd,port:this.port}).then(function (res) {
+                    this.isText=0
+                    if(res.body.msg==200){
+                        this.filelist=res.body
+                    }else {
+                        alert("连接失败请检查ip地址用户名密码是否正确");
+                        this.path1=prepath
+                    }
+                })
+            }
+        }
+    })
+
+</script>
+</html>
