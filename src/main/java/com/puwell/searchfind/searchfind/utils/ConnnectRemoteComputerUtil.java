@@ -120,7 +120,7 @@ public class ConnnectRemoteComputerUtil {
 
         }
     public static void main(String[] args) throws Exception {
-      Connection connection = connectRemoteLinux("192.168.10.241", "huoxl", "123456",22);
+      Connection connection = connectRemoteLinux("", "", "",);
         String cmd="ls /var/log";
         String path="cat /AWSSES.pid";
         //String execute = execute(connection, cmd);
